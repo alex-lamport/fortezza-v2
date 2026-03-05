@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architettura della Fortezza - Alex | Flow Architect</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #e0e0e0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 40px;
+            transition: all 0.3s ease;
+        }
+        h1, h2, h3 {
+            color: #ffffff;
+            font-weight: 400;
+            letter-spacing: -0.5px;
+        }
+        .container {
+            max-width: 1350px;
+            margin: auto;
+        }
+        .header {
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-title p {
+            color: #888;
+            margin: 5px 0 0 0;
+        }
+        
+        /* --- SISTEMA CONTROLLI HEADER --- */
+        .controls-wrapper {
+            display: flex;
+            gap: 15px;
+        }
+
+        .market-btn {
+            background-color: rgba(20, 20, 25, 0.6);
+            color: #666;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .market-btn svg { fill: #666; width: 14px; height: 14px; transition: fill 0.3s ease; }
+        .market-btn:hover { border-color: #555; color: #aaa; }
+        .market-btn:hover svg { fill: #aaa; }
+        .market-btn.active {
+            border-color: #00e5ff;
+            color: #00e5ff;
+            background-color: rgba(0, 229, 255, 0.05);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.15), inset 0 0 5px rgba(0, 229, 255, 0.05);
+        }
+        .market-btn.active svg { fill: #00e5ff; }
+
+        /* --- ETICHETTA DINAMICA --- */
+        #viewModeLabel {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #888;
+            font-size: 0.95em;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px dashed #333;
+        }
+        #viewModeLabel strong { color: #fff; letter-spacing: 0.5px; }
+
+        /* --- SCOMPARTO GRAFICI "FOCUS LOCK" --- */
+        .charts-wrapper {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+            gap: 20px;
+        }
+        .chart-container {
+            width: 450px;
+            text-align: center;
+            background: #151515;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #222;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+        canvas { transition: filter 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        
+        #detailChartContainer {
+            opacity: 0.15;
+            filter: grayscale(80%);
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- SISTEMA PRIVACY E LEGENDA FORENSE --- */
+        .table-control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+        .table-title { color: #fff; margin: 0; font-weight: 500; font-size: 1.1em; letter-spacing: 0.5px; }
+        
+        .legend-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .legend-text {
+            color: #888;
+            font-size: 0.75em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .privacy-toggle-cupo {
+            background-color: #121212;
+            color: #4fc3f7;
+            border: 1px solid #1a4abf;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8em;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .privacy-toggle-cupo:hover {
+            background-color: #1a4abf; color: #fff; box-shadow: 0 0 10px rgba(41, 98, 255, 0.4);
+        }
+        .privacy-toggle-cupo svg { transition: all 0.3s ease; }
+        
+        body.privacy-on .sensitive-data { filter: blur(8px); user-select: none; transition: filter 0.3s ease; }
+        .sensitive-data { transition: filter 0.3s ease; }
+
+        /* --- SISTEMA BOLLINI REWARD --- */
+        .reward-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #ffeb3b;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 235, 59, 0.8);
+            animation: pulseDot 2s infinite;
+            vertical-align: middle;
+        }
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 235, 59, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 235, 59, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 235, 59, 0); }
+        }
+
+        /* --- STILI TABELLA FORENSE (TICKER LOOK) --- */
+        table {
+            width: 100%;
+            border-collapse: collapse; 
+            background-color: #151515;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #222;
+            border-style: hidden;
+            box-shadow: 0 0 0 1px #222; 
+        }
+        
+        thead th {
+            background-color: #08080a; 
+            color: #666;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.7em;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #00e5ff; 
+            padding: 16px 20px;
+            text-align: left;
+        }
+
+        tbody tr {
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease, box-shadow 0.3s ease;
+            border-bottom: 1px solid #222;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        
+        tbody tr:hover {
+            transform: translateX(2px);
+            background-color: rgba(255, 255, 255, 0.02);
+            box-shadow: inset 3px 0 0 #00e5ff, 0 4px 15px rgba(0, 229, 255, 0.05);
+        }
+
+        th, td {
+            padding: 20px 20px;
+            vertical-align: top;
+            line-height: 1.6;
+            font-size: 0.82em; /* Ottimizzazione Tipografica */
+        }
+        td[contenteditable="true"] { outline: none; }
+        td[contenteditable="true"]:focus { background-color: rgba(41, 98, 255, 0.05); }
+
+        .highlight { color: #00e676; font-weight: 500; font-family: 'Courier New', Courier, monospace;}
+        .warning { color: #ffb300; font-weight: 500; font-family: 'Courier New', Courier, monospace;}
+        .critical { color: #ff5252; font-weight: 500; font-family: 'Courier New', Courier, monospace;}
+        
+        /* Struttura Ticker a Due Livelli */
+        .protocol-name { font-weight: 600; color: #fff; display: flex; align-items: center; margin-bottom: 4px; font-size: 1.15em; }
+        .ticker-val { 
+            font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace; 
+            font-weight: 600; 
+            color: #e0e0e0; 
+            font-size: 1.15em; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .ticker-usd {
+            font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace; 
+            font-size: 0.95em; 
+            color: #777;
+        }
+        .date-badge { 
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            color: #555; 
+            font-size: 0.85em; 
+            margin-top: 4px; 
+            display: block;
+        }
+
+        /* Micro-Loghi Integrati */
+        .crypto-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            filter: grayscale(60%) opacity(0.8);
+            transition: all 0.3s ease;
+            object-fit: contain;
+        }
+        .protocol-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            filter: grayscale(40%) opacity(0.8);
+            transition: all 0.3s ease;
+            object-fit: contain;
+            border-radius: 4px; /* Per SVG con sfondo pieno */
+        }
+        
+        tbody tr:hover .crypto-icon { filter: grayscale(0%) opacity(1); transform: scale(1.1); box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+        tbody tr:hover .protocol-icon { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
+        
+        /* Badge Tecnici di Stato */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+        .badge.safe { background: rgba(79, 195, 247, 0.1); color: #4fc3f7; border: 1px solid rgba(79, 195, 247, 0.3); box-shadow: 0 0 10px rgba(79, 195, 247, 0.15); }
+        .badge.warning { background: rgba(255, 179, 0, 0.1); color: #ffb300; border: 1px solid rgba(255, 179, 0, 0.3); box-shadow: 0 0 10px rgba(255, 179, 0, 0.15); }
+        .badge.critical { background: rgba(255, 82, 82, 0.15); color: #ff5252; border: 1px solid rgba(255, 82, 82, 0.4); box-shadow: 0 0 15px rgba(255, 82, 82, 0.3); animation: pulseCriticalBadge 2s infinite; }
+        
+        @keyframes pulseCriticalBadge {
+            0% { box-shadow: 0 0 10px rgba(255, 82, 82, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(255, 82, 82, 0.6); }
+            100% { box-shadow: 0 0 10px rgba(255, 82, 82, 0.2); }
+        }
+
+        /* Barre di Erosione (Margine di Manovra) */
+        .health-bar-container {
+            width: 100%;
+            height: 4px;
+            background: #1a1a24;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: flex-start; /* Riempimento da sinistra, si "svuota" ritirandosi verso sinistra */
+        }
+        .health-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .health-bar.safe { background: #4fc3f7; box-shadow: 0 0 8px #4fc3f7; }
+        .health-bar.warning { background: #ffb300; box-shadow: 0 0 8px #ffb300; }
+        .health-bar.critical { background: #ff5252; box-shadow: 0 0 10px #ff5252; animation: pulseBar 1.5s infinite; }
+        
+        @keyframes pulseBar {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; filter: brightness(1.3); }
+            100% { opacity: 0.7; }
+        }
+        
+        /* Icona X Minimalista e Integrata */
+        .x-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-top: 8px;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+        .x-link svg { width: 12px; height: 12px; fill: currentColor; }
+        .x-link:hover { opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.6); transform: translateX(2px); }
+
+        .footer-wrapper { margin-top: 60px; margin-bottom: 40px; }
+        .footer-note { padding: 30px; background: #111; border-left: 5px solid #2962ff; border-radius: 8px; font-size: 0.95em; color: #bbb; line-height: 1.7; margin-bottom: 20px; }
+        .footer-note strong { color: #fff; display: block; margin-bottom: 10px; font-size: 1.1em; }
+        .due-diligence { text-align: center; font-size: 0.85em; color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-title">
+            <h1>Architettura della Fortezza</h1>
+            <p>Protocollo Operativo di Gestione e Analisi On-Chain | Flow Architect</p>
+        </div>
+        <div class="controls-wrapper">
+            <button id="marketBtn" class="market-btn">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="14" width="4" height="6" rx="1"></rect>
+                    <rect x="10" y="10" width="4" height="10" rx="1"></rect>
+                    <rect x="17" y="4" width="4" height="16" rx="1"></rect>
+                </svg>
+                Market View
+            </button>
+        </div>
+    </div>
+
+    <div id="viewModeLabel">
+        Visualizzazione attuale: <strong>Base di Costo (Punti Zero)</strong>
+    </div>
+
+    <div class="charts-wrapper">
+        <div class="chart-container">
+            <h3>Asset Allocation Macro</h3>
+            <canvas id="macroChart"></canvas>
+        </div>
+        <div class="chart-container" id="detailChartContainer">
+            <h3 id="detailChartTitle">Terminale in Attesa...</h3>
+            <canvas id="detailChart"></canvas>
+        </div>
+    </div>
+
+    <div class="table-control-bar">
+        <h3 class="table-title">Matrice dei Protocolli DeFi</h3>
+        
+        <div class="legend-wrapper">
+            <div class="reward-dot"></div>
+            <span class="legend-text">Rewards Attive</span>
+        </div>
+
+        <button id="privacyBtn" class="privacy-toggle-cupo">
+            <svg id="lockIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+            </svg>
+            <span id="privacyText">PRIVACY OFF</span>
+        </button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 20%;">Protocollo</th>
+                <th style="width: 20%;">Ticker & Capitale</th>
+                <th style="width: 20%;">Performance & Rischio</th>
+                <th style="width: 40%;">Outlook Operativo (Flow Architect)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <svg class="protocol-icon" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="400" height="400" fill="#276ED6"/>
+                            <path d="M93.5739 245.771L121.04 208.7C122.819 206.3 126.59 207.298 126.986 210.268C135.366 273.188 220.801 295.712 258.759 242.952L345.703 125.6C347.032 123.81 349.87 124.745 349.87 126.978V195.672C349.87 198.523 348.952 201.303 347.253 203.591L298.566 269.189C247.618 342.509 133.99 334.827 92.7041 256.811C90.8382 253.279 91.1942 248.986 93.5739 245.771Z" fill="#DBDEF7"/>
+                            <path d="M305.398 154.289L277.774 191.566C275.995 193.966 272.23 192.968 271.828 190.006C263.375 127.315 178.4 104.76 140.307 157.116L91.4311 222.975L54.3034 273.573C52.9831 275.379 50.1289 274.437 50.1289 272.204V203.089C50.1289 200.238 51.046 197.466 52.738 195.178L97.4556 134.831C145.731 57.2191 264.956 63.7607 306.299 143.305C308.133 146.829 307.762 151.098 305.398 154.289Z" fill="#DBDEF7"/>
+                        </svg>
+                        Loopscale
+                    </div>
+                    <span class="date-badge">26/02/2026 - 00:46</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://metadata.jup.ag/token/jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v/image" class="crypto-icon"> 3.02 JupSOL <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 324.70</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="highlight">+0.02</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="warning">83.4%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge safe">12.22%</span></div>
+                    <div class="health-bar-container"><div class="health-bar safe" style="width: 75%"></div></div> 
+                </td>
+                <td contenteditable="true">Gestione chirurgica del collaterale. Strategia di accumulo yield ottimizzata su Solana con monitoraggio millimetrico del peg e della solvibilità dello smart contract.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <svg class="protocol-icon" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="400" height="400" fill="#276ED6"/>
+                            <path d="M93.5739 245.771L121.04 208.7C122.819 206.3 126.59 207.298 126.986 210.268C135.366 273.188 220.801 295.712 258.759 242.952L345.703 125.6C347.032 123.81 349.87 124.745 349.87 126.978V195.672C349.87 198.523 348.952 201.303 347.253 203.591L298.566 269.189C247.618 342.509 133.99 334.827 92.7041 256.811C90.8382 253.279 91.1942 248.986 93.5739 245.771Z" fill="#DBDEF7"/>
+                            <path d="M305.398 154.289L277.774 191.566C275.995 193.966 272.23 192.968 271.828 190.006C263.375 127.315 178.4 104.76 140.307 157.116L91.4311 222.975L54.3034 273.573C52.9831 275.379 50.1289 274.437 50.1289 272.204V203.089C50.1289 200.238 51.046 197.466 52.738 195.178L97.4556 134.831C145.731 57.2191 264.956 63.7607 306.299 143.305C308.133 146.829 307.762 151.098 305.398 154.289Z" fill="#DBDEF7"/>
+                        </svg>
+                        Loopscale
+                    </div>
+                    <span class="date-badge">25/02/2026 - 21:12</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://metadata.jup.ag/token/jupSoLaHXQiZZTSfEWMTRRgpnyFm8f6sZdosWBjx93v/image" class="crypto-icon"> 2.50 JupSOL <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 267.91</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="highlight">+0.01</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="warning">85.2%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge warning">10.31%</span></div>
+                    <div class="health-bar-container"><div class="health-bar warning" style="width: 45%"></div></div> 
+                </td>
+                <td contenteditable="true">Saturazione dell'efficienza del capitale tramite leva calcolata. Posizionamento tattico per massimizzare il ritorno sul capitale nel breve periodo.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <svg class="protocol-icon" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="400" height="400" fill="#276ED6"/>
+                            <path d="M93.5739 245.771L121.04 208.7C122.819 206.3 126.59 207.298 126.986 210.268C135.366 273.188 220.801 295.712 258.759 242.952L345.703 125.6C347.032 123.81 349.87 124.745 349.87 126.978V195.672C349.87 198.523 348.952 201.303 347.253 203.591L298.566 269.189C247.618 342.509 133.99 334.827 92.7041 256.811C90.8382 253.279 91.1942 248.986 93.5739 245.771Z" fill="#DBDEF7"/>
+                            <path d="M305.398 154.289L277.774 191.566C275.995 193.966 272.23 192.968 271.828 190.006C263.375 127.315 178.4 104.76 140.307 157.116L91.4311 222.975L54.3034 273.573C52.9831 275.379 50.1289 274.437 50.1289 272.204V203.089C50.1289 200.238 51.046 197.466 52.738 195.178L97.4556 134.831C145.731 57.2191 264.956 63.7607 306.299 143.305C308.133 146.829 307.762 151.098 305.398 154.289Z" fill="#DBDEF7"/>
+                        </svg>
+                        Loopscale
+                    </div>
+                    <span class="date-badge">26/02/2026 - 03:52</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png" class="crypto-icon"> 10.94 STKESOL <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 1,031.56</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="highlight">+0.03</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="critical">89.5%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge critical">5.73%</span></div>
+                    <div class="health-bar-container"><div class="health-bar critical" style="width: 15%"></div></div> 
+                </td>
+                <td contenteditable="true">Posizione aggressiva mirata all'accumulo massivo di rewards. Rischio di de-peg monitorato in tempo reale.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <svg class="protocol-icon" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="400" height="400" fill="#276ED6"/>
+                            <path d="M93.5739 245.771L121.04 208.7C122.819 206.3 126.59 207.298 126.986 210.268C135.366 273.188 220.801 295.712 258.759 242.952L345.703 125.6C347.032 123.81 349.87 124.745 349.87 126.978V195.672C349.87 198.523 348.952 201.303 347.253 203.591L298.566 269.189C247.618 342.509 133.99 334.827 92.7041 256.811C90.8382 253.279 91.1942 248.986 93.5739 245.771Z" fill="#DBDEF7"/>
+                            <path d="M305.398 154.289L277.774 191.566C275.995 193.966 272.23 192.968 271.828 190.006C263.375 127.315 178.4 104.76 140.307 157.116L91.4311 222.975L54.3034 273.573C52.9831 275.379 50.1289 274.437 50.1289 272.204V203.089C50.1289 200.238 51.046 197.466 52.738 195.178L97.4556 134.831C145.731 57.2191 264.956 63.7607 306.299 143.305C308.133 146.829 307.762 151.098 305.398 154.289Z" fill="#DBDEF7"/>
+                        </svg>
+                        Loopscale
+                    </div>
+                    <span class="date-badge">04/03/2026 - 16:41</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://assets.coingecko.com/coins/images/34444/standard/ondo_logo_blue_1x1.png" class="crypto-icon"> 1,090.33 ONyc
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 1,179.40</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="safe">0.00</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="safe">74.7%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge safe">16.97%</span></div>
+                    <div class="health-bar-container"><div class="health-bar safe" style="width: 85%"></div></div>
+                </td>
+                <td contenteditable="true">Holding in leva su RWA. Accumulo collaterale per espansione e bilanciamento della volatilità dello scomparto Crypto direzionale.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <img src="https://use.deficarrot.com/assets/crt-logo-Cms66d7b.png" class="protocol-icon"> Defi Carrot
+                    </div>
+                    <span class="date-badge">26/02/2026 - 00:47</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://assets.coingecko.com/coins/images/34444/standard/ondo_logo_blue_1x1.png" class="crypto-icon"> 3,355.14 ONyc <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 1,058.10</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="safe">0.00</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="safe">70.8%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge safe">18.00%</span></div>
+                    <div class="health-bar-container"><div class="health-bar safe" style="width: 90%"></div></div>
+                </td>
+                <td contenteditable="true">
+                    Esposizione tattica sui Real World Assets (Leva 3.43x). Posizione in farm attivo per le Air Wars.<br>
+                    <a href="https://x.com/alex_lamports/status/2028298584081289660?s=20" target="_blank" class="x-link" contenteditable="false">
+                        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        Analisi Forense On-Chain
+                    </a>
+                </td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <img src="https://api.kamino.finance/kvaults/mints/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/metadata/image.svg" class="protocol-icon" style="filter: grayscale(40%) opacity(0.8) drop-shadow(0 0 2px rgba(255,255,255,0.3));"> Kamino Finance
+                    </div>
+                    <span class="date-badge">26/02/2026 - 11:34</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://api.kamino.finance/kvaults/mints/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/metadata/image.svg" class="crypto-icon"> 1,178.43 USDG <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: $ 1,178.43</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="critical">-1.02</span></div>
+                    <div style="font-family: monospace; color: #aaa; margin-top: 2px;">LTV: <span class="warning">88.9%</span></div>
+                    <div style="margin-top: 6px;">Health: <span class="badge warning">10.60%</span></div>
+                    <div class="health-bar-container"><div class="health-bar warning" style="width: 50%"></div></div>
+                </td>
+                <td contenteditable="true">Yield farming su stable-loop (Leva 9.03x) per annullare il rischio volatilità. LTV in zona sicura grazie al peg. Tracciamento chirurgico dei residui a wallet.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <img src="https://cryptologos.cc/logos/jupiter-ag-jup-logo.svg" class="protocol-icon"> Jupiter Lend
+                    </div>
+                    <span class="date-badge">23/02/2026 - 13:53</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://assets.coingecko.com/coins/images/26040/standard/EURC.png" class="crypto-icon"> 1,453.32 EURC
+                    </div>
+                    <div class="ticker-usd sensitive-data">Liquidità Nativa</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="highlight">+0.99</span></div>
+                    <div style="margin-top: 8px;">Stato: <span class="badge safe">Safe (Paracadute)</span></div>
+                </td>
+                <td contenteditable="true">Riserva Strategica di Collaterale pronta per interventi rapidi a copertura delle posizioni a leva o per ingressi tattici sul mercato.</td>
+            </tr>
+
+            <tr>
+                <td contenteditable="true">
+                    <div class="protocol-name">
+                        <img src="https://sail.money/Logo_white.png" class="protocol-icon"> Sail Money
+                    </div>
+                    <span class="date-badge">24/02/2026 - 12:51</span>
+                </td>
+                <td contenteditable="true">
+                    <div class="ticker-val sensitive-data">
+                        <img src="https://assets.coingecko.com/coins/images/26040/standard/EURC.png" class="crypto-icon"> 1,451.90 EURC <div class="reward-dot"></div>
+                    </div>
+                    <div class="ticker-usd sensitive-data">Net Value: € 1,451.87</div>
+                </td>
+                <td contenteditable="true">
+                    <div style="font-family: monospace; color: #aaa;">Delta: <span class="highlight">+0.16</span></div>
+                    <div style="margin-top: 8px;">Stato: <span class="badge safe">Safe (AI Agent)</span></div>
+                </td>
+                <td contenteditable="true">Sperimentazione attiva dell'automazione on-chain. L'agente IA ribilancia dinamicamente, abbattendo il carico cognitivo del micro-management sulle stablecoin.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-wrapper">
+        <div class="footer-note">
+            <strong>Nota dell'Architetto</strong>
+            L'estrazione quantitativa del dato è solo metà del lavoro. Questa architettura è costruita seguendo i principi della <em>Neuro-Etica della Sensibilità</em>: il monitoraggio forense dei flussi non è solo numerico, ma serve a decodificare la matrice comportamentale che muove i capitali on-chain.
+        </div>
+        <div class="due-diligence">
+            * On-Chain Verification and Wallet Address details are strictly maintained under secure OpSec protocols and available exclusively upon request for professional due diligence.
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- SISTEMA TOGGLE PRIVACY (DARK FORENSIC) ---
+    const privacyBtn = document.getElementById('privacyBtn');
+    const privacyText = document.getElementById('privacyText');
+    const lockIcon = document.getElementById('lockIcon');
+    let privacyMode = false;
+
+    const svgClosed = `
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    `;
+    const svgOpen = `
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+    `;
+
+    privacyBtn.addEventListener('click', () => {
+        privacyMode = !privacyMode;
+        if(privacyMode) {
+            document.body.classList.add('privacy-on');
+            privacyText.textContent = 'PRIVACY ON';
+            lockIcon.innerHTML = svgClosed;
+            privacyBtn.style.backgroundColor = '#1a4abf';
+            privacyBtn.style.color = '#fff';
+            privacyBtn.style.borderColor = '#2962ff';
+        } else {
+            document.body.classList.remove('privacy-on');
+            privacyText.textContent = 'PRIVACY OFF';
+            lockIcon.innerHTML = svgOpen;
+            privacyBtn.style.backgroundColor = '#121212';
+            privacyBtn.style.color = '#4fc3f7';
+            privacyBtn.style.borderColor = '#1a4abf';
+        }
+    });
+
+    // --- CONFIGURAZIONE TOOLTIP (OpSec: Percentuali Dinamiche) ---
+    const opsecTooltip = {
+        callbacks: {
+            title: () => null, 
+            label: function(context) {
+                let sum = context.dataset.data.reduce((a, b) => a + b, 0);
+                let percentage = ((context.raw / sum) * 100).toFixed(1) + '%';
+                return context.label + ' | ' + percentage;
+            }
+        }
+    };
+
+    // --- GENERATORI GRADIENTI E COORDINAMENTO COLORI ---
+    const makeGrad = (ctx, area, c1, c2) => {
+        const grad = ctx.createLinearGradient(area.left, area.top, area.right, area.bottom);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+        return grad;
+    };
+
+    const glowColors = ['rgba(0, 229, 255, 0.5)', 'rgba(220, 220, 235, 0.5)', 'rgba(255, 183, 77, 0.5)'];
+    const borderColors = ['#00e5ff', '#dcdceb', '#ffb74d'];
+
+    const getMacroGradients = (ctx, chartArea) => {
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        const r = Math.min(cx, cy);
+        
+        const gradETF = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradETF.addColorStop(0, '#3a7bd5'); gradETF.addColorStop(1, '#1a4abf');
+
+        const gradLiq = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradLiq.addColorStop(0, '#595968'); gradLiq.addColorStop(1, '#2a2a35');
+
+        const gradCrypto = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradCrypto.addColorStop(0, '#ffb74d'); gradCrypto.addColorStop(1, '#d84315');
+
+        return [gradETF, gradLiq, gradCrypto];
+    };
+
+    const getDimmedMacroGradients = (ctx, chartArea) => {
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        const r = Math.min(cx, cy);
+        
+        const gradETF = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradETF.addColorStop(0, '#0a1220'); gradETF.addColorStop(1, '#050910');
+
+        const gradLiq = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradLiq.addColorStop(0, '#15151a'); gradLiq.addColorStop(1, '#0c0c0f');
+
+        const gradCrypto = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gradCrypto.addColorStop(0, '#1a0f05'); gradCrypto.addColorStop(1, '#0d0702');
+
+        return [gradETF, gradLiq, gradCrypto];
+    };
+
+    // --- DATI DEI TRE PANNELLI CHAMELEON ---
+    const dataMacroBase = [36.2, 31.0, 32.8];
+    const dataMacroMarket = [35.1, 29.6, 35.3]; 
+
+    const detailConfig = {
+        0: { 
+            title: 'ETF Settoriale (MSCI World)',
+            labels: ['Tech', 'Financials', 'Industrials', 'Cons. Discretionary', 'Health Care', 'Comm Services', 'Altri Settori'],
+            dataBase: [26.2, 16.74, 11.61, 9.82, 9.66, 8.98, 17.0],
+            dataMarket: [26.2, 16.74, 11.61, 9.82, 9.66, 8.98, 17.0], 
+            getGradients: (ctx, area) => [
+                makeGrad(ctx, area, '#03045e', '#023e8a'), makeGrad(ctx, area, '#023e8a', '#0077b6'),
+                makeGrad(ctx, area, '#0077b6', '#0096c7'), makeGrad(ctx, area, '#0096c7', '#00b4d8'),
+                makeGrad(ctx, area, '#00b4d8', '#48cae4'), makeGrad(ctx, area, '#48cae4', '#90e0ef'),
+                makeGrad(ctx, area, '#90e0ef', '#caf0f8')
+            ]
+        },
+        1: { 
+            title: 'Liquidità (Il Paracadute)',
+            labels: ['Kamino (USDG)', 'Jupiter Lend (EURC)', 'Sail Money (EURC)', 'Loopscale (ONyc)', 'Carrot (ONyc)'],
+            dataBase: [1000, 1450, 1450, 1000, 900],
+            dataMarket: [1000, 1450, 1450, 1000, 900],
+            getGradients: (ctx, area) => [
+                makeGrad(ctx, area, '#2b2b36', '#3f3f4e'), makeGrad(ctx, area, '#3f3f4e', '#595968'),
+                makeGrad(ctx, area, '#595968', '#78788c'), makeGrad(ctx, area, '#78788c', '#9a9ab0'),
+                makeGrad(ctx, area, '#9a9ab0', '#c2c2d6')
+            ]
+        },
+        2: { 
+            title: 'Scomposizione Crypto (AI & RWA)',
+            labels: ['BTC', 'ETH', 'SOL', 'BNB', 'TAO (AI)', 'ONDO (RWA)'],
+            dataBase: [2092, 1103, 1649, 610, 124, 249],
+            dataMarket: [3190, 970, 1385, 933, 141, 279],
+            getGradients: (ctx, area) => [
+                makeGrad(ctx, area, '#ffcc80', '#f7931a'), makeGrad(ctx, area, '#9fa8da', '#627eea'),
+                makeGrad(ctx, area, '#69f0ae', '#14f195'), makeGrad(ctx, area, '#ffe082', '#f3ba2f'),
+                makeGrad(ctx, area, '#ce93d8', '#9c27b0'), makeGrad(ctx, area, '#80deea', '#00bcd4')
+            ]
+        }
+    };
+
+    let activeMacroIndex = null;
+    let isMarketView = false;
+
+    // --- RENDER GRAFICI ---
+    Chart.defaults.color = '#888';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    const ctxMacro = document.getElementById('macroChart').getContext('2d');
+    const macroChart = new Chart(ctxMacro, {
+        type: 'doughnut',
+        data: {
+            labels: ['La Roccia (ETF)', 'Il Paracadute (Liquidità)', 'Crypto (Big Cap & Alt)'],
+            datasets: [{
+                data: dataMacroBase,
+                backgroundColor: function(context) {
+                    const {ctx, chartArea} = context.chart;
+                    if (!chartArea) return null;
+                    const grads = getMacroGradients(ctx, chartArea);
+                    const dimGrads = getDimmedMacroGradients(ctx, chartArea);
+                    if (activeMacroIndex !== null && activeMacroIndex !== context.dataIndex) {
+                        return dimGrads[context.dataIndex];
+                    }
+                    return grads[context.dataIndex];
+                },
+                borderColor: '#151515',
+                borderWidth: 4,
+                hoverBorderColor: borderColors, 
+                hoverBorderWidth: 2
+            }]
+        },
+        options: {
+            onHover: (event, elements, chart) => {
+                if (elements.length > 0) {
+                    event.native.target.style.cursor = 'pointer';
+                    const idx = elements[0].index;
+                    chart.canvas.style.filter = `drop-shadow(0 0 15px ${glowColors[idx]})`;
+                } else {
+                    event.native.target.style.cursor = 'default';
+                    chart.canvas.style.filter = 'none';
+                }
+            },
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    activeMacroIndex = elements[0].index;
+                    const config = detailConfig[activeMacroIndex];
+                    const container = document.getElementById('detailChartContainer');
+                    const title = document.getElementById('detailChartTitle');
+                    
+                    title.textContent = config.title;
+                    detailChart.data.labels = config.labels;
+                    detailChart.data.datasets[0].data = isMarketView ? config.dataMarket : config.dataBase;
+                    detailChart.data.datasets[0].backgroundColor = function(context) {
+                        const {ctx, chartArea} = context.chart;
+                        if (!chartArea) return null;
+                        return config.getGradients(ctx, chartArea)[context.dataIndex];
+                    };
+                    
+                    detailChart.data.datasets[0].hoverBorderColor = borderColors[activeMacroIndex];
+                    
+                    container.style.opacity = '1';
+                    container.style.filter = 'grayscale(0%)';
+                    container.style.boxShadow = `0 0 25px ${glowColors[activeMacroIndex].replace('0.5', '0.15')}`;
+                    container.style.borderColor = glowColors[activeMacroIndex].replace('0.5', '0.3');
+                    
+                    macroChart.update();
+                    detailChart.update();
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom', padding: 20 },
+                tooltip: opsecTooltip
+            }
+        }
+    });
+
+    const ctxDetail = document.getElementById('detailChart').getContext('2d');
+    const detailChart = new Chart(ctxDetail, {
+        type: 'pie',
+        data: {
+            labels: detailConfig[2].labels,
+            datasets: [{
+                data: detailConfig[2].dataBase,
+                backgroundColor: function(context) {
+                    const {ctx, chartArea} = context.chart;
+                    if (!chartArea) return null;
+                    return detailConfig[2].getGradients(ctx, chartArea)[context.dataIndex];
+                },
+                borderColor: '#151515',
+                borderWidth: 4,
+                hoverBorderColor: '#ffb74d',
+                hoverBorderWidth: 2
+            }]
+        },
+        options: {
+            onHover: (event, elements, chart) => {
+                if (elements.length > 0 && activeMacroIndex !== null) {
+                    event.native.target.style.cursor = 'pointer';
+                    chart.canvas.style.filter = `drop-shadow(0 0 15px ${glowColors[activeMacroIndex]})`;
+                } else {
+                    event.native.target.style.cursor = 'default';
+                    chart.canvas.style.filter = 'none';
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: opsecTooltip
+            }
+        }
+    });
+
+    // --- SISTEMA TOGGLE MARKET VIEW ---
+    const marketBtn = document.getElementById('marketBtn');
+    const viewModeLabel = document.getElementById('viewModeLabel');
+
+    marketBtn.addEventListener('click', () => {
+        isMarketView = !isMarketView;
+        
+        if(isMarketView) {
+            marketBtn.classList.add('active');
+            macroChart.data.datasets[0].data = dataMacroMarket;
+            if (activeMacroIndex !== null) {
+                detailChart.data.datasets[0].data = detailConfig[activeMacroIndex].dataMarket;
+            }
+            viewModeLabel.innerHTML = 'Visualizzazione attuale: <strong>Potenza di Mercato (Valori Attuali)</strong>';
+        } else {
+            marketBtn.classList.remove('active');
+            macroChart.data.datasets[0].data = dataMacroBase;
+            if (activeMacroIndex !== null) {
+                detailChart.data.datasets[0].data = detailConfig[activeMacroIndex].dataBase;
+            }
+            viewModeLabel.innerHTML = 'Visualizzazione attuale: <strong>Base di Costo (Punti Zero)</strong>';
+        }
+        
+        macroChart.update();
+        if(activeMacroIndex !== null) detailChart.update();
+    });
+</script>
+
+</body>
+</html>
