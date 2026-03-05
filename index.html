@@ -247,28 +247,22 @@
             display: block;
         }
 
-        /* Micro-Loghi Integrati */
-        .crypto-icon {
-            width: 16px;
-            height: 16px;
+        /* Micro-Loghi Integrati con Filtro Flow Architect */
+        .crypto-icon, .protocol-icon {
             border-radius: 50%;
             margin-right: 8px;
-            filter: grayscale(60%) opacity(0.8);
+            filter: grayscale(100%) opacity(0.4);
             transition: all 0.3s ease;
             object-fit: contain;
         }
-        .protocol-icon {
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            filter: grayscale(40%) opacity(0.8);
-            transition: all 0.3s ease;
-            object-fit: contain;
-            border-radius: 4px; /* Per SVG con sfondo pieno */
-        }
+        .crypto-icon { width: 16px; height: 16px; }
+        .protocol-icon { width: 18px; height: 18px; border-radius: 4px; /* Per SVG quadrati */ }
         
-        tbody tr:hover .crypto-icon { filter: grayscale(0%) opacity(1); transform: scale(1.1); box-shadow: 0 0 8px rgba(255,255,255,0.2); }
-        tbody tr:hover .protocol-icon { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
+        tbody tr:hover .crypto-icon, tbody tr:hover .protocol-icon { 
+            filter: grayscale(0%) opacity(1); 
+            transform: scale(1.1); 
+            box-shadow: 0 0 8px rgba(255,255,255,0.2); 
+        }
         
         /* Badge Tecnici di Stato */
         .badge {
@@ -468,7 +462,7 @@
                 </td>
                 <td contenteditable="true">
                     <div class="ticker-val sensitive-data">
-                        <img src="https://metadata.jup.ag/token/stk9ApnmLafD4gFRxv4jEnWFmZkstBDFaXAjFYdRSXb/image" class="crypto-icon"> 10.94 STKESOL <div class="reward-dot"></div>
+                        <img src="https://metadata.jup.ag/token/So11111111111111111111111111111111111111112/image" class="crypto-icon"> 10.94 STKESOL <div class="reward-dot"></div>
                     </div>
                     <div class="ticker-usd sensitive-data">Net Value: $ 1,031.56</div>
                 </td>
@@ -495,7 +489,7 @@
                 </td>
                 <td contenteditable="true">
                     <div class="ticker-val sensitive-data">
-                        <img src="https://metadata.jup.ag/token/5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5/image" class="crypto-icon"> 1,090.33 ONyc
+                        <img src="https://metadata.jup.ag/token/Fz1qN5aK4A5i4WnNn5cZb6hT9n5xVn9gW7QY4vBv5bV/image" class="crypto-icon"> 1,090.33 ONyc
                     </div>
                     <div class="ticker-usd sensitive-data">Net Value: $ 1,179.40</div>
                 </td>
@@ -517,7 +511,7 @@
                 </td>
                 <td contenteditable="true">
                     <div class="ticker-val sensitive-data">
-                        <img src="https://metadata.jup.ag/token/5Y8NV33Vv7WbnLfq3zBcKSdYPrk7g2KoiQoe7M2tcxp5/image" class="crypto-icon"> 3,355.14 ONyc <div class="reward-dot"></div>
+                        <img src="https://metadata.jup.ag/token/Fz1qN5aK4A5i4WnNn5cZb6hT9n5xVn9gW7QY4vBv5bV/image" class="crypto-icon"> 3,355.14 ONyc <div class="reward-dot"></div>
                     </div>
                     <div class="ticker-usd sensitive-data">Net Value: $ 1,058.10</div>
                 </td>
@@ -539,13 +533,13 @@
             <tr>
                 <td contenteditable="true">
                     <div class="protocol-name">
-                        <img src="https://api.kamino.finance/kvaults/mints/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/metadata/image.svg" class="protocol-icon" style="filter: grayscale(40%) opacity(0.8) drop-shadow(0 0 2px rgba(255,255,255,0.3));"> Kamino Finance
+                        <img src="https://api.kamino.finance/kvaults/mints/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/metadata/image.svg" class="protocol-icon"> Kamino Finance
                     </div>
                     <span class="date-badge">26/02/2026 - 11:34</span>
                 </td>
                 <td contenteditable="true">
                     <div class="ticker-val sensitive-data">
-                        <img src="https://api.kamino.finance/kvaults/mints/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/metadata/image.svg" class="crypto-icon"> 1,178.43 USDG <div class="reward-dot"></div>
+                        <img src="https://metadata.jup.ag/token/2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH/image" class="crypto-icon"> 1,178.43 USDG <div class="reward-dot"></div>
                     </div>
                     <div class="ticker-usd sensitive-data">Net Value: $ 1,178.43</div>
                 </td>
@@ -561,7 +555,7 @@
             <tr>
                 <td contenteditable="true">
                     <div class="protocol-name">
-                        <img src="https://cryptologos.cc/logos/jupiter-ag-jup-logo.svg" class="protocol-icon"> Jupiter Lend
+                        <img src="https://metadata.jup.ag/token/JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbAbdAQe3eU4/image" class="protocol-icon"> Jupiter Lend
                     </div>
                     <span class="date-badge">23/02/2026 - 13:53</span>
                 </td>
